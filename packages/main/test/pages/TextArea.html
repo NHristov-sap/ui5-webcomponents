@@ -39,7 +39,12 @@
 	<section class="group">
 		<ui5-title>Value State Message</ui5-title>
 		<br>
-		<ui5-textarea id="textarea-value-state-msg" value="Test" value-state="Negative">
+		<ui5-textarea id="textarea-value-state-msg" value="Test" value-state="Negative" growing rows="1" growing-max-rows="2">
+			<div id="value-state-msg" slot="valueStateMessage">Information message. This is a <a href="#">Link</a>. Extra long text used as an information message. Extra long text used as an information message - 2. Extra long text used as an information message - 3.</div>
+		</ui5-textarea>
+
+		<br>
+		<ui5-textarea id="textarea-value-state-msg" value="Test" value-state="Positive" growing rows="1">
 			<div id="value-state-msg" slot="valueStateMessage">Information message. This is a <a href="#">Link</a>. Extra long text used as an information message. Extra long text used as an information message - 2. Extra long text used as an information message - 3.</div>
 		</ui5-textarea>
 	</section>
@@ -54,7 +59,11 @@
 
 		<br>
 		<br>
-		<ui5-textarea rows="1" id="basic-textarea-error" placeholder="Placeholder" value-state="Negative"></ui5-textarea>
+		<ui5-textarea rows="1" id="basic-textarea-error" placeholder="Placeholder" value-state="Negative">
+			<div slot="valueStateMessage">
+				This is a random value state message text with a <a href="#" _target="blank">Link</a>.
+			</div>
+		</ui5-textarea>
 
 		<br>
 		<br>
@@ -201,6 +210,11 @@
 		<ui5-textarea id="taWithLabelID2" class="textarea-width" placeholder="Enter some text here" accessible-name="Here aria label should be this one"></ui5-textarea>
 	</section>
 
+	<section class="group">
+		<ui5-label>Text Area: Escape Prevention</ui5-title>
+		<ui5-textarea id="textarea-prevent-escape" class="textarea-width" placeholder="Escape prevention test"></ui5-textarea>
+	</section>
+
 	<script>
 		var changeCounter = 0;
 		var inputCounter = 0;
@@ -213,6 +227,12 @@
 		document.getElementById('textarea-input').addEventListener("ui5-input", function (event) {
 			inputCounter += 1;
 			document.getElementById('inputResult').value = `${inputCounter}`;
+		});
+
+		document.getElementById('textarea-prevent-escape').addEventListener("ui5-input", function (event) {
+			if (event.detail.escapePressed) {
+				event.preventDefault();
+			}
 		});
 	</script>
 

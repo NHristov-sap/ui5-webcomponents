@@ -1,17 +1,17 @@
-![UI5 icon](https://raw.githubusercontent.com/SAP/ui5-webcomponents/main/docs/images/UI5_logo_wide.png)
-
-
-# UI5 Web Components - Compatibility
+# ![UI5 icon](https://raw.githubusercontent.com/SAP/ui5-webcomponents/main/docs/images/UI5_logo_water.png)UI5 Web Components - Compatibility
 
 [![npm Package Version](https://badge.fury.io/js/%40ui5%2Fwebcomponents.svg)](https://www.npmjs.com/package/@ui5/webcomponents)
 
-Provides Table web component for compatibility (previously part of the "@ui5/webcomponents" package), while brand new Table web component is being developed and will replace it in the "@ui5/webcomponents" package.
+**DEPRECATED SINCE 2.12.0:** The `@ui5/webcomponents-compat` package has been deprecated as of version `2.12.0`.
+Please use the Table from `@ui5/webcomponents` package instead.
 
-
-**Note:** The package is available since 2.0 and will be available until the next major release (3.0) when it will be removed as the Table "@ui5/webcomponents" will finally replace it.
-
+While `@ui5/webcomponents-compat` will remain available for compatibility purposes (until the next major release),
+migration is strongly recommended, as new development and enhancements will be focused on `@ui5/webcomponents/Table`.
 
 ## Provided components
+
+The package provides Table web component and several subcomopnents as descrived below.
+
 
 | Web Component            | Tag name                    | Module import                                              |
 |--------------------------|-----------------------------|------------------------------------------------------------|

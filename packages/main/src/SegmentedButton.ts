@@ -1,24 +1,32 @@
 import UI5Element from "@ui5/webcomponents-base/dist/UI5Element.js";
 import customElement from "@ui5/webcomponents-base/dist/decorators/customElement.js";
 import property from "@ui5/webcomponents-base/dist/decorators/property.js";
-import event from "@ui5/webcomponents-base/dist/decorators/event.js";
+import event from "@ui5/webcomponents-base/dist/decorators/event-strict.js";
 import slot from "@ui5/webcomponents-base/dist/decorators/slot.js";
+import {
+	getEffectiveAriaLabelText,
+	getAssociatedLabelForTexts,
+	getEffectiveAriaDescriptionText,
+} from "@ui5/webcomponents-base/dist/util/AccessibilityTextsHelper.js";
+import jsxRenderer from "@ui5/webcomponents-base/dist/renderer/JsxRenderer.js";
 import ItemNavigation from "@ui5/webcomponents-base/dist/delegate/ItemNavigation.js";
 import type { ITabbable } from "@ui5/webcomponents-base/dist/delegate/ItemNavigation.js";
-import litRender from "@ui5/webcomponents-base/dist/renderer/LitRenderer.js";
 import type I18nBundle from "@ui5/webcomponents-base/dist/i18nBundle.js";
-import { getI18nBundle } from "@ui5/webcomponents-base/dist/i18nBundle.js";
+import i18n from "@ui5/webcomponents-base/dist/decorators/i18n.js";
 import { getScopedVarName } from "@ui5/webcomponents-base/dist/CustomElementsScope.js";
 import {
 	isSpace,
 	isEnter,
+	isShift,
+	isEscape,
 } from "@ui5/webcomponents-base/dist/Keys.js";
 import { SEGMENTEDBUTTON_ARIA_DESCRIPTION, SEGMENTEDBUTTON_ARIA_DESCRIBEDBY } from "./generated/i18n/i18n-defaults.js";
-import SegmentedButtonItem from "./SegmentedButtonItem.js";
+import "./SegmentedButtonItem.js";
+import type SegmentedButtonItem from "./SegmentedButtonItem.js";
 import SegmentedButtonSelectionMode from "./types/SegmentedButtonSelectionMode.js";
 
 // Template
-import SegmentedButtonTemplate from "./generated/templates/SegmentedButtonTemplate.lit.js";
+import SegmentedButtonTemplate from "./SegmentedButtonTemplate.js";
 
 // Styles
 import SegmentedButtonCss from "./generated/themes/SegmentedButton.css.js";
@@ -57,27 +65,23 @@ type SegmentedButtonSelectionChangeEventDetail = {
 @customElement({
 	tag: "ui5-segmented-button",
 	languageAware: true,
-	renderer: litRender,
+	renderer: jsxRenderer,
 	template: SegmentedButtonTemplate,
 	styles: SegmentedButtonCss,
-	dependencies: [SegmentedButtonItem],
 })
 /**
  * Fired when the selected item changes.
- * @param {Array<ISegmentedButtonItem>} selectedItems an array of selected items.
+ * @param {Array<ISegmentedButtonItem>} selectedItems an array of selected items. Since: 1.14.0
  * @public
  */
-@event<SegmentedButtonSelectionChangeEventDetail>("selection-change", {
-	detail: {
-		/**
-		 * @public
-		 * @since 1.14.0
-		 */
-		selectedItems: { type: Array },
-	},
+@event("selection-change", {
+	bubbles: true,
 })
 
 class SegmentedButton extends UI5Element {
+	eventDetails!: {
+		"selection-change": SegmentedButtonSelectionChangeEventDetail,
+	}
 	/**
 	 * Defines the accessible ARIA name of the component.
 	 * @default undefined
@@ -86,6 +90,33 @@ class SegmentedButton extends UI5Element {
 	 */
 	@property()
 	accessibleName?: string;
+
+	/**
+	 * Defines the IDs of the HTML Elements that label the component.
+	 * @default undefined
+	 * @public
+	 * @since 2.15.0
+	 */
+	@property()
+	accessibleNameRef?: string;
+
+	/**
+	 * Defines the accessible description of the component.
+	 * @default undefined
+	 * @public
+	 * @since 2.15.0
+	 */
+	@property()
+	accessibleDescription?: string;
+
+	/**
+	 * Defines the IDs of the HTML Elements that describe the component.
+	 * @default undefined
+	 * @public
+	 * @since 2.15.0
+	 */
+	@property()
+	accessibleDescriptionRef?: string;
 
 	/**
 	 * Defines the component selection mode.
@@ -107,6 +138,7 @@ class SegmentedButton extends UI5Element {
 	@slot({ type: HTMLElement, invalidateOnChildChange: true, "default": true })
 	items!: Array<ISegmentedButtonItem>;
 
+	@i18n("@ui5/webcomponents")
 	static i18nBundle: I18nBundle;
 
 	_itemNavigation: ItemNavigation;
@@ -115,9 +147,7 @@ class SegmentedButton extends UI5Element {
 
 	_selectedItem?: ISegmentedButtonItem;
 
-	static async onDefine() {
-		SegmentedButton.i18nBundle = await getI18nBundle("@ui5/webcomponents");
-	}
+	_actionCanceled: boolean;
 
 	constructor() {
 		super();
@@ -126,19 +156,22 @@ class SegmentedButton extends UI5Element {
 			getItemsCallback: () => this.navigatableItems,
 		});
 		this.hasPreviouslyFocusedItem = false;
+		this._actionCanceled = false;
 	}
 
 	onBeforeRendering() {
 		const items = this.getSlottedNodes<SegmentedButtonItem>("items");
+		const visibleItems = items.filter(item => !item.hidden);
+		let index = 1;
 
-		items.forEach((item, index, arr) => {
-			item.posInSet = index + 1;
-			item.sizeOfSet = arr.length;
+		items.forEach(item => {
+			item.posInSet = item.hidden ? undefined : index++;
+			item.sizeOfSet = item.hidden ? undefined : visibleItems.length;
 		});
 
 		this.normalizeSelection();
 
-		this.style.setProperty(getScopedVarName("--_ui5_segmented_btn_items_count"), `${items.length}`);
+		this.style.setProperty(getScopedVarName("--_ui5_segmented_btn_items_count"), `${visibleItems.length}`);
 	}
 
 	normalizeSelection() {
@@ -161,6 +194,10 @@ class SegmentedButton extends UI5Element {
 		}
 	}
 
+	getFocusDomRef(): HTMLElement | undefined {
+		return this._itemNavigation._getCurrentItem();
+	}
+
 	_selectItem(e: MouseEvent | KeyboardEvent) {
 		const target = e.target as SegmentedButtonItem;
 		const isTargetSegmentedButtonItem = target.hasAttribute("ui5-segmented-button-item");
@@ -179,7 +216,7 @@ class SegmentedButton extends UI5Element {
 			this._applySingleSelection(target);
 		}
 
-		this.fireEvent<SegmentedButtonSelectionChangeEventDetail>("selection-change", {
+		this.fireDecoratorEvent("selection-change", {
 			selectedItems: this.selectedItems,
 		});
 
@@ -202,15 +239,22 @@ class SegmentedButton extends UI5Element {
 
 	_onkeydown(e: KeyboardEvent) {
 		if (isEnter(e)) {
-			this._selectItem(e);
+			this._selectItem(e); // Enter key behavior remains unaffected
 		} else if (isSpace(e)) {
-			e.preventDefault();
+			e.preventDefault(); // Prevent scrolling
+			this._actionCanceled = false; // Reset the action cancellation flag
+		} else if (isShift(e) || isEscape(e)) {
+			this._actionCanceled = true; // Set the flag to cancel the action
 		}
 	}
 
 	_onkeyup(e: KeyboardEvent) {
 		if (isSpace(e)) {
-			this._selectItem(e);
+			// Only select if the action was not canceled
+			if (!this._actionCanceled) {
+				this._selectItem(e);
+			}
+			this._actionCanceled = false; // Reset the flag after handling
 		}
 	}
 
@@ -257,11 +301,15 @@ class SegmentedButton extends UI5Element {
 		});
 	}
 
-	get ariaDescribedBy() {
-		return SegmentedButton.i18nBundle.getText(SEGMENTEDBUTTON_ARIA_DESCRIBEDBY);
+	get ariaLabelText() {
+		return getEffectiveAriaLabelText(this) || getAssociatedLabelForTexts(this) || undefined;
 	}
 
-	get ariaDescription() {
+	get ariaDescriptionText() {
+		return `${(getEffectiveAriaDescriptionText(this) || "")} ${SegmentedButton.i18nBundle.getText(SEGMENTEDBUTTON_ARIA_DESCRIBEDBY)}`.trim();
+	}
+
+	get ariaRoleDescription() {
 		return SegmentedButton.i18nBundle.getText(SEGMENTEDBUTTON_ARIA_DESCRIPTION);
 	}
 }

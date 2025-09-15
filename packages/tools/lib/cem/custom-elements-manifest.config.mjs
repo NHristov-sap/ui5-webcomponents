@@ -27,6 +27,7 @@ import { generateCustomData } from "cem-plugin-vs-code-custom-data-generator";
 import { customElementJetBrainsPlugin } from "custom-element-jet-brains-integration";
 
 const packageJSON = JSON.parse(fs.readFileSync("./package.json"));
+const devMode = process.env.UI5_CEM_MODE === "dev";
 
 const extractClassNodeJSDoc = node => {
 	const fileContent = node.getFullText();
@@ -127,8 +128,12 @@ function processClass(ts, classNode, moduleDoc) {
 	}
 
 	// Events
-	currClass.events = findAllDecorators(classNode, "event")
+	currClass.events = findAllDecorators(classNode, ["event", "eventStrict"])
 		?.map(event => processEvent(ts, event, classNode, moduleDoc));
+
+	const filename = classNode.getSourceFile().fileName;
+	const sourceFile = typeProgram.getSourceFile(filename);
+	const tsProgramClassNode = sourceFile.statements.find(statement => ts.isClassDeclaration(statement) && statement.name?.text === classNode.name?.text);
 
 	// Slots (with accessor), methods and fields
 	for (let i = 0; i < (currClass.members?.length || 0); i++) {
@@ -184,20 +189,21 @@ function processClass(ts, classNode, moduleDoc) {
 				const propertyDecorator = findDecorator(classNodeMember, "property");
 
 				if (propertyDecorator) {
-					member._ui5validator = propertyDecorator?.expression?.arguments[0]?.properties?.find(property => ["validator", "type"].includes(property.name.text))?.initializer?.text || "String";
 					member._ui5noAttribute = propertyDecorator?.expression?.arguments[0]?.properties?.find(property => property.name.text === "noAttribute")?.initializer?.kind === ts.SyntaxKind.TrueKeyword || undefined;
 				}
 
-				if (currClass.customElement && member.privacy === "public" && !propertyDecorator?.expression?.arguments[0]?.properties?.find(property => property.name.text === "multiple") && !["object"].includes(member._ui5validator?.toLowerCase())) {
-					const filename = classNode.getSourceFile().fileName;
-					const sourceFile = typeProgram.getSourceFile(filename);
-					const tsProgramClassNode = sourceFile.statements.find(statement => ts.isClassDeclaration(statement) && statement.name?.text === classNode.name?.text);
+				if (currClass.customElement && member.privacy === "public") {
 					const tsProgramMember = tsProgramClassNode.members.find(m => ts.isPropertyDeclaration(m) && m.name?.text === member.name);
 					const attributeValue = typeChecker.typeToString(typeChecker.getTypeAtLocation(tsProgramMember), tsProgramMember);
 
 					if (attributeValue === "boolean" && member.default === "true") {
 						logDocumentationError(moduleDoc.path, `Boolean properties must be initialzed to false. [${member.name}] property of class [${className}] is intialized to \`true\``)
 					}
+
+					if (!member.type) {
+						logDocumentationError(moduleDoc.path, `Public properties must have type. The type of [${member.name}] property is not determinated automatically. Please check it.`)
+					}
+
 					currClass.attributes.push({
 						description: member.description,
 						name: toKebabCase(member.name),
@@ -446,14 +452,6 @@ export default {
 				}
 			},
 			moduleLinkPhase({ moduleDoc }) {
-				for (let i = 0; i < moduleDoc.declarations.length; i++) {
-					const shouldRemove = processPublicAPI(moduleDoc.declarations[i]) || ["function", "variable"].includes(moduleDoc.declarations[i].kind)
-					if (shouldRemove) {
-						moduleDoc.declarations.splice(i, 1);
-						i--;
-					}
-				}
-
 				moduleDoc.path = moduleDoc.path?.replace(/^src/, "dist").replace(/\.ts$/, ".js");
 
 				moduleDoc.exports = moduleDoc.exports.
@@ -477,41 +475,51 @@ export default {
 						})
 					}
 				})
+			},
+			packageLinkPhase({ customElementsManifest }) {
+				customElementsManifest.modules.forEach(moduleDoc => {
+					for (let i = 0; i < moduleDoc.declarations.length; i++) {
+						const shouldRemove = processPublicAPI(moduleDoc.declarations[i]) || ["function", "variable"].includes(moduleDoc.declarations[i].kind)
+						if (shouldRemove) {
+							moduleDoc.declarations.splice(i, 1);
+							i--;
+						}
+					}
 
-				const typeReferences = new Set();
-				const registerTypeReference = reference => typeReferences.add(JSON.stringify(reference))
+					const typeReferences = new Set();
+					const registerTypeReference = reference => typeReferences.add(JSON.stringify(reference))
 
-				moduleDoc.declarations.forEach(declaration => {
-					["events", "slots", "members"].forEach(memberType => {
-						declaration[memberType]?.forEach(member => {
-							if (member.type?.references) {
-								member.type.references.forEach(registerTypeReference)
-							} else if (member._ui5type?.references) {
-								member._ui5type.references.forEach(registerTypeReference)
-							} else if (member.kind === "method") {
-								member.return?.type?.references?.forEach(registerTypeReference)
+					moduleDoc.declarations.forEach(declaration => {
+						["events", "slots", "members"].forEach(memberType => {
+							declaration[memberType]?.forEach(member => {
+								if (member.type?.references) {
+									member.type.references.forEach(registerTypeReference)
+								} else if (member._ui5type?.references) {
+									member._ui5type.references.forEach(registerTypeReference)
+								} else if (member.kind === "method") {
+									member.return?.type?.references?.forEach(registerTypeReference)
 
-								member.parameters?.forEach(parameter => {
-									parameter.type?.references?.forEach(registerTypeReference)
-								})
-							}
+									member.parameters?.forEach(parameter => {
+										parameter.type?.references?.forEach(registerTypeReference)
+									})
+								}
+							})
 						})
+					});
+
+					typeReferences.forEach(reference => {
+						reference = JSON.parse(reference);
+						if (reference.package === packageJSON?.name && reference.module === moduleDoc.path) {
+							const hasExport = moduleDoc.exports.some(e => e.declaration?.name === reference.name && e.declaration?.module === reference.module)
+
+							if (!hasExport) {
+								logDocumentationError(moduleDoc.path?.replace(/^dist/, "src").replace(/\.js$/, ".ts"), `Type '${reference.name}' is used to describe a public API but is not exported.`,)
+							}
+						}
 					})
 				});
 
-				typeReferences.forEach(reference => {
-					reference = JSON.parse(reference);
-					if (reference.package === packageJSON?.name && reference.module === moduleDoc.path) {
-						const hasExport = moduleDoc.exports.some(e => e.declaration?.name === reference.name && e.declaration?.module === reference.module)
-
-						if (!hasExport) {
-							logDocumentationError(moduleDoc.path?.replace(/^dist/, "src").replace(/\.js$/, ".ts"), `Type '${reference.name}' is used to describe a public API but is not exported.`,)
-						}
-					}
-				})
-			},
-			packageLinkPhase({ context }) {
-				if (context.dev) {
+				if (devMode) {
 					displayDocumentationErrors();
 				}
 			}

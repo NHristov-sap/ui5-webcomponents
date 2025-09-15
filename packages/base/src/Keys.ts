@@ -106,7 +106,13 @@ type KeyCodes = typeof KeyCodes[keyof typeof KeyCodes];
 
 const isEnter = (event: KeyboardEvent): boolean => (event.key ? event.key === "Enter" : event.keyCode === KeyCodes.ENTER) && !hasModifierKeys(event);
 
+const isEnterCtrl = (event: KeyboardEvent): boolean => (event.key ? event.key === "Enter" : event.keyCode === KeyCodes.ENTER) && checkModifierKeys(event, true, false, false);
+
+const isEnterAlt = (event: KeyboardEvent): boolean => (event.key ? event.key === "Enter" : event.keyCode === KeyCodes.ENTER) && checkModifierKeys(event, false, true, false);
+
 const isEnterShift = (event: KeyboardEvent): boolean => (event.key ? event.key === "Enter" : event.keyCode === KeyCodes.ENTER) && checkModifierKeys(event, false, false, true);
+
+const isCtrl = (event: KeyboardEvent): boolean => checkModifierKeys(event, true, false, false);
 
 const isSpace = (event: KeyboardEvent): boolean => (event.key ? (event.key === "Spacebar" || event.key === " ") : event.keyCode === KeyCodes.SPACE) && !hasModifierKeys(event);
 
@@ -226,6 +232,8 @@ const isF6Previous = (event: KeyboardEvent): boolean => ((event.key ? event.key 
 
 const isF7 = (event: KeyboardEvent): boolean => (event.key ? event.key === "F7" : event.keyCode === KeyCodes.F7) && !hasModifierKeys(event);
 
+const isCtrlAltF8 = (event: KeyboardEvent): boolean => (event.key ? event.key === "F8" : event.keyCode === KeyCodes.F8) && checkModifierKeys(event, true, true, false);
+
 const isShowByArrows = (event: KeyboardEvent): boolean => {
 	return ((event.key === "ArrowDown" || event.key === "Down") || (event.key === "ArrowUp" || event.key === "Up")) && checkModifierKeys(event, /* Ctrl */ false, /* Alt */ true, /* Shift */ false);
 };
@@ -252,7 +260,10 @@ const isColon = (event: KeyboardEvent): boolean => ((event.key ? event.key === "
 
 export {
 	isEnter,
+	isEnterCtrl,
+	isEnterAlt,
 	isEnterShift,
+	isCtrl,
 	isSpace,
 	isSpaceShift,
 	isSpaceCtrl,
@@ -313,4 +324,5 @@ export {
 	isInsertCtrl,
 	isNumber,
 	isColon,
+	isCtrlAltF8,
 };

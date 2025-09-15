@@ -41,7 +41,7 @@ No properties available for this component.`
 |-------------|---|
 | Description | ${processDescription(property.description)} |
 | Type        | ${processType(property.type)}               |
-| Default     | ${property.default}                         |`
+| Default     | ${property.default.replace("{}", "\\{\\}")}                         |`
 
 
         if (property.readonly) {
@@ -156,6 +156,10 @@ No events available for this component.`
             eventResult += `\n| Since | ${event._ui5since} |`
         }
 
+        eventResult += `\n| Bubbles | ${event._ui5Bubbles ? "Yes" : "No"} |`
+
+        eventResult += `\n| Cancelable | ${event._ui5Cancelable ? "Yes - via <code>preventDefault()</code>" : "No"} |`
+
         if (event.deprecated) {
             eventResult += `\n| Deprecated | ${processDescription(typeof event.deprecated === "boolean" ? "true" : event.deprecated)} |`
         }
@@ -227,7 +231,7 @@ No enum fields available for this enum.`
     result = `${result}
 | Name | Description |
 |------|-------------|
-${enumFields.map(field => `| ${field.name} | ${processDescription(field.description)} |`).join("\n")}`
+${enumFields.map(field => `| ${field.name} ${field.deprecated ? `<br /> <span className="badge badge--primary">Deprecated</span>` : ""} | ${processDescription(field.description)} ${field.deprecated ? `<br /> <small style={{fontStyle: "italic"}}>${deprecatedText(field)}</small>` : ""} |`).join("\n")}`
 
     return result;
 }
@@ -259,7 +263,11 @@ const parseDeclaration = (declaration, packageName) => {
 
     let sections = [];
 
-    if (declaration._ui5experimental) {
+    if (declaration.deprecated) {
+        sections.push(`:::warning
+${deprecatedText(declaration)}
+:::`)
+    } else if (declaration._ui5experimental) {
         sections.push(`:::info
 ${experimentalText(declaration)}
 :::`)
@@ -292,7 +300,10 @@ ${declaration._implementations.map(_implementation => `| ${_implementation.split
 
     let fileContent = sections.join("\n\n");
 
-    if (declaration._ui5experimental) {
+
+    if (declaration.deprecated) {
+        fileContent = addDeprecatedClassName(fileContent, declaration);
+    } else if (declaration._ui5experimental) {
         fileContent = addExperimentalClassName(fileContent, declaration);
     }
 
@@ -300,12 +311,16 @@ ${declaration._implementations.map(_implementation => `| ${_implementation.split
     return fileContent;
 }
 
-
-
 const experimentalText = declaration => {
-    return typeof declaration._ui5experimental === "boolean" ? 
+    return typeof declaration._ui5experimental === "boolean" ?
         "The following entity is available under an experimental flag and its API and behavior are subject to change."
         : declaration._ui5experimental;
+}
+
+const deprecatedText = declaration => {
+    return typeof declaration.deprecated === "boolean" ?
+        "The following entity is deprecated and will be removed in the next major version."
+        : declaration.deprecated;
 }
 
 
@@ -314,7 +329,23 @@ const parseComponentDeclaration = (declaration, fileContent) => {
         return "";
     }
 
-    if (declaration._ui5experimental) {
+    if (declaration.customElement) {
+        fileContent = enhanceFrontMatter(fileContent, "ui5_tag_name", declaration.tagName)
+    }
+
+    if (declaration._ui5since) {
+        fileContent = enhanceFrontMatter(fileContent, "ui5_since", `${declaration._ui5since}`)
+    }
+
+    if (declaration.deprecated) {
+        fileContent = addDeprecatedClassName(fileContent, declaration);
+
+        fileContent = fileContent.replace("<%COMPONENT_OVERVIEW%>", `:::warning
+${deprecatedText(declaration)}
+:::
+
+${parseDeclarationDescription(declaration.description)}`)
+    } else if (declaration._ui5experimental) {
         fileContent = addExperimentalClassName(fileContent, declaration);
 
         fileContent = fileContent.replace("<%COMPONENT_OVERVIEW%>", `:::info
@@ -340,6 +371,25 @@ ${parseDeclarationDescription(declaration.description)}`)
 }
 
 const experimentalCssClass = "expComponentBadge";
+const deprecatedCssClass = "deprComponentBadge";
+
+const addDeprecatedClassName = (fileContent, declaration) => {
+    if (!declaration.deprecated) {
+        return fileContent;
+    }
+
+    const frontMatter = fileContent.match(/^---\n(?:.+\n)*---/);
+
+    if (!frontMatter) {
+        return `---
+sidebar_class_name: ${deprecatedCssClass}
+---
+
+${fileContent}`
+    }
+
+    return enhanceFrontMatter(fileContent, "sidebar_class_name", deprecatedCssClass)
+}
 
 const addExperimentalClassName = (fileContent, declaration) => {
     if (!declaration._ui5experimental) {
@@ -356,15 +406,29 @@ sidebar_class_name: ${experimentalCssClass}
 ${fileContent}`
     }
 
+    return enhanceFrontMatter(fileContent, "sidebar_class_name", experimentalCssClass)
+}
+
+const enhanceFrontMatter = (fileContent, front_matter_name, value) => {
+    const frontMatter = fileContent.match(/^---\n(?:.+\n)*---/);
+
+    if (!frontMatter) {
+        return `---
+${front_matter_name}: ${value}
+---
+
+${fileContent}`
+    }
+
     const frontMatterLines = frontMatter[0].split("\n");
-    const classLineIndex = frontMatterLines.findIndex(line => line.startsWith("sidebar_class_name"))
+    const classLineIndex = frontMatterLines.findIndex(line => line.startsWith(front_matter_name))
     const classLine = classLineIndex !== -1 ? frontMatterLines[classLineIndex] : undefined;
-    const hasExperimentalClass = classLine?.includes(experimentalCssClass);
+    const hasExperimentalClass = classLine?.includes(value);
 
     if (classLine && !hasExperimentalClass) {
-        frontMatterLines[classLineIndex] = `${classLine} ${experimentalCssClass}`;
+        frontMatterLines[classLineIndex] = `${classLine} ${value}`;
     } else if (!classLine) {
-       frontMatterLines.splice(frontMatterLines.length - 1, 0, `sidebar_class_name: ${experimentalCssClass}`);
+        frontMatterLines.splice(frontMatterLines.length - 1, 0, `${front_matter_name}: ${value}`);
     }
 
     return fileContent.replace(frontMatter[0], frontMatterLines.join("\n"));

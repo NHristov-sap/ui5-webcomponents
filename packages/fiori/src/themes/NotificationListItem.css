@@ -57,16 +57,13 @@
 	border-right: var(--_ui5-notification_item-border-top-left-right);
 	border-top: var(--_ui5-notification_item-border-top-left-right);
 	border-radius: var(--_ui5-notification_item-border-radius);
+	list-style: none;
 }
 /* End */
 
 .ui5-nli-root {
-	display: flex;
-	flex-direction: row-reverse;
 	position: relative;
 	width: 100%;
-	padding-inline: var(--_ui5-notification_item-root-padding-inline);
-	padding-block: 1rem;
 	box-sizing: border-box;
 	cursor: pointer;
 	border-radius: var(--_ui5-notification_item-border-radius);
@@ -85,6 +82,16 @@
 	border: var(--_ui5-notification_item-border-active);
 }
 
+.ui5-nli-content-wrapper {
+	width: 100%;
+	display: flex;
+	flex-direction: row-reverse;
+	padding-inline: var(--_ui5-notification_item-root-padding-inline);
+	padding-block: 1rem;
+	position: relative;
+	box-sizing: border-box;
+}
+
 .ui5-nli-content {
 	display: flex;
 	flex-direction: column;
@@ -92,7 +99,7 @@
 	min-width: 0; /* fixes Chrome flex issue */
 	width: 100%;
 	padding-inline: var(--_ui5-notification_item-content-padding);
-	font-family: "72override", var(--sapFontFamily);
+	font-family: var(--sapFontFamily);
 	box-sizing: border-box;
 }
 
@@ -149,7 +156,6 @@
 	font-size: var(--sapFontSize);
 	margin-top: var(--_ui5-notification_item-footer-margin-top);
 	box-sizing: border-box;
-	flex-wrap: wrap;
 	align-items: center;
 }
 
@@ -161,6 +167,7 @@
 
 .ui5-nli-footnotes {
 	display: flex;
+	min-width: 0; /* prevents overflowing footnotes */
 }
 
 .ui5-nli-footer-showMore {
@@ -192,4 +199,9 @@
 	right: var(--_ui5-notification_item-focus-offset);
 	bottom: var(--_ui5-notification_item-focus-offset);
 	left: var(--_ui5-notification_item-focus-offset);
+}
+
+[ui5-busy-indicator] {
+	width: 100%;
+	border-radius: var(--_ui5-notification_item-border-radius);
 }

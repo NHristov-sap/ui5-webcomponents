@@ -1,7 +1,4 @@
-![UI5 icon](https://raw.githubusercontent.com/SAP/ui5-webcomponents/main/docs/images/UI5_logo_wide.png)
-
-
-# UI5 Web Components - Create Package
+# ![UI5 icon](https://raw.githubusercontent.com/SAP/ui5-webcomponents/main/docs/images/UI5_logo_water.png)UI5 Web Components - Create Package
 
 [![npm Package Version](https://badge.fury.io/js/%40ui5%2Fwebcomponents.svg)](https://www.npmjs.com/package/@ui5/webcomponents)
 
@@ -18,10 +15,9 @@ Usage:
     npm init @ui5/webcomponents-package -- [OPTIONS]
 
 Options:
-    --name <string>     - defines the package name
-    --component-name <string>      - defines the component class name that will be created in your new package
-    --tag <string>      - defines the tag name of the sample web component that will be created in your new package. The tag will be derived from the component name if not provided.
-    --skip              - skips configuration and generates package with a default value for each parameter that wasn't passed
+    --name <string>                      - defines the package name
+    --test-setup <"cypress" | "manual">  - defines whether the predefined test setup should be added or it will be configured manually.
+    --skip                               - skips configuration and generates package with a default value for each parameter that wasn't passed
 ```
 
 The script creates a new directory, and fills it with a `package.json` file and all necessary source files, and resources for a new
@@ -33,10 +29,9 @@ components package.
 Usage:
     yarn create @ui5/webcomponents-package [OPTIONS]
 Options:
-    --name <string>     - defines the package name
-    --component-name <string>      - defines the component class name that will be created in your new package
-    --tag <string>      - defines the tag name of the sample web component that will be created in your new package
-    --skip              - skips configuration and generates package with a default value for each parameter that wasn't passed
+    --name <string>                      - defines the package name
+    --test-setup <"cypress" | "manual">  - defines whether the predefined test setup should be added or it will be configured manually.
+    --skip                               - skips configuration and generates package with a default value for each parameter that wasn't passed
 ```
 
 The script creates a new directory, and fills it with a `package.json` file and all necessary source files, and resources for a new

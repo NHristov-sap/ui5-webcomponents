@@ -5,7 +5,7 @@ import type { IOption } from "./Select.js";
 import ListItemBase from "./ListItemBase.js";
 
 // Template
-import OptionCustomTemplate from "./generated/templates/OptionCustomTemplate.lit.js";
+import OptionCustomTemplate from "./OptionCustomTemplate.js";
 
 // Styles
 import optionBaseCss from "./generated/themes/OptionBase.css.js";
@@ -37,6 +37,8 @@ import optionBaseCss from "./generated/themes/OptionBase.css.js";
 	],
 })
 class OptionCustom extends ListItemBase implements IOption {
+	eventDetails!: ListItemBase["eventDetails"];
+
 	/**
 	 * Defines the text, displayed inside the `ui5-select` input filed
 	 * when the option gets selected.
@@ -56,21 +58,27 @@ class OptionCustom extends ListItemBase implements IOption {
 	value?: string;
 
 	/**
-	 * Defines the text of the component.
-	 *
-	 * **Note:** Although this slot accepts HTML Elements, it is strongly recommended that you only use text in order to preserve the intended design.
+	 * Defines the content of the component.
 	 * @public
 	 */
 	@slot({ type: Node, "default": true, invalidateOnChildChange: true })
 	content!: Array<Node>;
 
 	/**
-	 * Defines the text of the tooltip that would be displayed for the list item.
+	 * Defines the tooltip of the option.
 	 * @default undefined
 	 * @public
 	 */
 	@property()
 	tooltip?: string;
+
+	/**
+	 * Defines the selected state of the component.
+	 * @default false
+	 * @public
+	 */
+	@property({ type: Boolean })
+	declare selected: boolean;
 
 	get effectiveDisplayText() {
 		return this.displayText || this.textContent || "";

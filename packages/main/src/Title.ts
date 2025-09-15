@@ -1,12 +1,12 @@
 import UI5Element from "@ui5/webcomponents-base/dist/UI5Element.js";
-import litRender from "@ui5/webcomponents-base/dist/renderer/LitRenderer.js";
+import jsxRenderer from "@ui5/webcomponents-base/dist/renderer/JsxRenderer.js";
 import customElement from "@ui5/webcomponents-base/dist/decorators/customElement.js";
 import property from "@ui5/webcomponents-base/dist/decorators/property.js";
 import TitleLevel from "./types/TitleLevel.js";
 import type WrappingType from "./types/WrappingType.js";
 
 // Template
-import TitleTemplate from "./generated/templates/TitleTemplate.lit.js";
+import TitleTemplate from "./TitleTemplate.js";
 
 // Styles
 import titleCss from "./generated/themes/Title.css.js";
@@ -32,7 +32,7 @@ import titleCss from "./generated/themes/Title.css.js";
  */
 @customElement({
 	tag: "ui5-title",
-	renderer: litRender,
+	renderer: jsxRenderer,
 	template: TitleTemplate,
 	styles: titleCss,
 })
@@ -50,11 +50,22 @@ class Title extends UI5Element {
 	/**
 	 * Defines the component level.
 	 * Available options are: `"H6"` to `"H1"`.
+	 * This property does not influence the style of the component.
+	 * Use the property `size` for this purpose instead.
 	 * @default "H2"
 	 * @public
 	 */
 	@property()
 	level: `${TitleLevel}` = "H2";
+
+	/**
+	 * Defines the visual appearance of the title.
+	 * Available options are: `"H6"` to `"H1"`.
+	 * @default "H5"
+	 * @public
+	 */
+	@property()
+	size: `${TitleLevel}` = "H5";
 
 	get h1() {
 		return this.level === TitleLevel.H1;

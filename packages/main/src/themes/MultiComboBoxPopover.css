@@ -8,11 +8,11 @@
 	border-bottom: 0.0625rem solid var(--sapGroup_TitleBorderColor);
 	display: flex;
 	align-items: center;
-	font-family: "72override", var(--sapFontFamily);
+	font-family: var(--sapFontFamily);
 	position: sticky;
 	top: 0;
 	z-index: 2;
-	background: var(--sapToolbar_Background);
+	background: var(--sapPageHeader_Background);
 }
 
 .ui5-mcb-select-all-checkbox {
@@ -31,4 +31,12 @@
 
 .ui5-mcb-select-all-checkbox::part(label) {
 	font-family: var(--sapFontBoldFamily);
+}
+
+:host([readonly]) ::slotted([ui5-mcb-item]) {
+	cursor: auto;
+}
+
+[ui5-responsive-popover] .ui5-valuestatemessage-header, [ui5-popover] .ui5-valuestatemessage-header  {
+	max-width: inherit;
 }

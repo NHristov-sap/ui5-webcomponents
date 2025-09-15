@@ -1,6 +1,5 @@
-![UI5 icon](/docs/images/UI5_logo_wide.png)
+#  ![UI5 icon](https://raw.githubusercontent.com/SAP/ui5-webcomponents/main/docs/images/Logo_wide_25.png)
 
-# UI5 Web Components
 [![CI](https://github.com/SAP/ui5-webcomponents/actions/workflows/test.yaml/badge.svg)](https://github.com/SAP/ui5-webcomponents/actions/workflows/test.yaml)
 [![npm Package Version](https://badge.fury.io/js/%40ui5%2Fwebcomponents.svg)](https://www.npmjs.com/package/@ui5/webcomponents)
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/ui5-webcomponents)](https://api.reuse.software/info/github.com/SAP/ui5-webcomponents)
@@ -25,12 +24,12 @@
 ## More Resources
 - [UI5 Web Components Home Page](https://sap.github.io/ui5-webcomponents)
 - [Configuring UI5 Web Components](./docs/2-advanced/01-configuration.md)
-- [Customizing with `UI Theme Designer`](./docs/3-customizing/02-theme.md)
-- [Developing Custom UI5 Web Components](./docs/5-development/02-custom-UI5-Web-Components.md)
-- [Creating a Custom UI5 Web Components Package](./docs/5-development/01-custom-UI5-Web-Components-Packages.md)
-- [Micro-Frontends and Custom Elements Scoping](./docs/2-advanced/03-scoping.md)
-- [Release Management](./docs/Release%20Management.md)
-- [F.A.Q.](./docs/FAQ.md)
+- [Customizing with `UI Theme Designer`](./docs/2-advanced/12-theming.md)
+- [Creating a Custom UI5 Web Components Package](docs/4-development/01-package.md)
+- [Developing Custom UI5 Web Components](docs/4-development/02-component.md)
+- [Micro-Frontends and Custom Elements Scoping](./docs/2-advanced/06-scoping.md)
+- [Release Management](./docs/08-Releases.md)
+- [F.A.Q.](./docs/09-FAQ.md)
 
 ## Related Projects
 
@@ -86,7 +85,7 @@ Moreover, all Angular-specific features, such as two-way data binding and Angula
 	<ui5-button>Hello world!</ui5-button>
 	```
 
-	For more information, see [Importing UI5 Web Components](./docs/1-getting-started/02-importing-components.md) and [Understanding UI5 Web Components APIs](./docs/1-getting-started/03-understanding-components-APIs.md).
+	For more information, see [Importing UI5 Web Components](https://sap.github.io/ui5-webcomponents/docs/getting-started/components-packages/) and [Understanding UI5 Web Components APIs](https://sap.github.io/ui5-webcomponents/docs/getting-started/components-APIs/).
 
 ## Typescript Support
 TypeScript Support is enabled for both component development and component consumption.
@@ -157,7 +156,7 @@ yarn start:website
 # open http://localhost:3000/ui5-webcomponents/nightly/
 ```
 
-**Note:** If you wish to manually install dependencies & run the Playground you can check out our [in depth tutorial](./docs/6-contributing/03-website.md)
+**Note:** If you wish to manually install dependencies & run the Playground you can check out our [in depth tutorial](docs/5-contributing/03-website.md)
 
 ### Production Build
 To build the UI5 Web Components project, run the following commands:
@@ -180,4 +179,4 @@ No major bugs known. To report an issue or view the currently open issues, click
 We welcome all comments, suggestions, questions, and bug reports. Please follow our [Support Guidelines](/SUPPORT.md#-content) on how to report an issue, or chat with us in the `#webcomponents` channel of the [OpenUI5 Community Slack](https://ui5-slack-invite.cfapps.eu10.hana.ondemand.com/).
 
 ## Contribute
-Please check our [Contribution Guidelines](./docs/6-contributing/02-conventions-and-guidelines.md).
+Please check our [Contribution Guidelines](docs/5-contributing/02-conventions-and-guidelines.md).

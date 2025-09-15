@@ -1,13 +1,28 @@
 import customElement from "@ui5/webcomponents-base/dist/decorators/customElement.js";
+import jsxRenderer from "@ui5/webcomponents-base/dist/renderer/JsxRenderer.js";
 import property from "@ui5/webcomponents-base/dist/decorators/property.js";
 import slot from "@ui5/webcomponents-base/dist/decorators/slot.js";
 import type ValueState from "@ui5/webcomponents-base/dist/types/ValueState.js";
 import ListItem from "./ListItem.js";
 import type { IAccessibleListItem } from "./ListItem.js";
-import Icon from "./Icon.js";
-import Avatar from "./Avatar.js";
 import type WrappingType from "./types/WrappingType.js";
-import ListItemStandardTemplate from "./generated/templates/ListItemStandardTemplate.lit.js";
+import ListItemStandardTemplate from "./ListItemStandardTemplate.js";
+import type { ExpandableTextTemplateParams } from "./types/ExpandableTextTemplateParams.js";
+
+/**
+ * Maximum number of characters to display for small screens (Size S)
+ * @private
+ */
+const MAX_CHARACTERS_SIZE_S = 100;
+
+/**
+ * Maximum number of characters to display for medium and larger screens (Size M and above)
+ * @private
+ */
+const MAX_CHARACTERS_SIZE_M = 300;
+
+// Specific template type for expandable text
+type ExpandableTextTemplate = (this: ListItemStandard, params: ExpandableTextTemplateParams) => JSX.Element;
 
 /**
  * @class
@@ -27,23 +42,26 @@ import ListItemStandardTemplate from "./generated/templates/ListItemStandardTemp
  * @csspart delete-button - Used to style the button rendered when the list item is in delete mode
  * @csspart radio - Used to style the radio button rendered when the list item is in single selection mode
  * @csspart checkbox - Used to style the checkbox rendered when the list item is in multiple selection mode
- * @slot {Node[]} default - Defines the text of the component.
- *
- * **Note:** Although this slot accepts HTML Elements, it is strongly recommended that you only use text in order to preserve the intended design.
  * @constructor
  * @extends ListItem
  * @public
  */
 @customElement({
 	tag: "ui5-li",
+	renderer: jsxRenderer,
 	template: ListItemStandardTemplate,
-	dependencies: [
-		...ListItem.dependencies,
-		Icon,
-		Avatar,
-	],
 })
 class ListItemStandard extends ListItem implements IAccessibleListItem {
+	/**
+	 * Defines the text of the component.
+	 *
+	 * @default undefined
+	 * @public
+	 * @since 2.10.0
+	 */
+	@property()
+	text?: string;
+
 	/**
 	 * Defines the description displayed right under the item text, if such is present.
 	 * @default undefined
@@ -68,22 +86,11 @@ class ListItemStandard extends ListItem implements IAccessibleListItem {
 	/**
 	 * Defines whether the `icon` should be displayed in the beginning of the list item or in the end.
 	 *
-	 * **Note:** If `image` is set, the `icon` would be displayed after the `image`.
 	 * @default false
 	 * @public
 	 */
 	@property({ type: Boolean })
 	iconEnd = false;
-
-	/**
-	 * Defines the `image` source URI.
-	 *
-	 * **Note:** The `image` would be displayed in the beginning of the list item.
-	 * @default undefined
-	 * @public
-	 */
-	@property()
-	image?: string;
 
 	/**
 	 * Defines the `additionalText`, displayed in the end of the list item.
@@ -122,15 +129,24 @@ class ListItemStandard extends ListItem implements IAccessibleListItem {
 	 * @since 1.0.0-rc.15
 	 */
 	@property()
-	declare accessibleName: string;
+	declare accessibleName?: string;
 
 	/**
-	 * Defines if the text of the component should wrap, they truncate by default.
+	 * Defines if the text of the component should wrap when it's too long.
+	 * When set to "Normal", the content (title, description) will be wrapped
+	 * using the `ui5-expandable-text` component.<br/>
 	 *
-	 * **Note:** this property takes affect only if text node is provided to default slot of the component
+	 * The text can wrap up to 100 characters on small screens (size S) and
+	 * up to 300 characters on larger screens (size M and above). When text exceeds
+	 * these limits, it truncates with an ellipsis followed by a text expansion trigger.
+	 *
+	 * Available options are:
+	 * - `None` (default) - The text will truncate with an ellipsis.
+	 * - `Normal` - The text will wrap (without truncation).
+	 *
 	 * @default "None"
-	 * @private
-	 * @since 1.5.0
+	 * @public
+	 * @since 2.10.0
 	 */
 	@property()
 	wrappingType: `${WrappingType}` = "None";
@@ -143,7 +159,28 @@ class ListItemStandard extends ListItem implements IAccessibleListItem {
 	hasTitle = false;
 
 	@property({ type: Boolean })
-	_hasImageContent = false;
+	_hasImage = false;
+
+	/**
+	 * The expandableText template.
+	 * @private
+	 */
+	@property({ noAttribute: true })
+	expandableTextTemplate?: ExpandableTextTemplate;
+
+	/**
+	 * Defines the custom formatted text of the component.
+	 *
+	 * **Note:** For optimal text wrapping and a consistent layout, it is strongly recommended to use the `text` property.
+	 *
+	 * Use the `default` slot only when custom formatting with HTML elements (e.g., `<b>`, `<i>`) is required.
+	 * Be aware that wrapping (via `wrappingType="Normal"`) may not function correctly with custom HTML content in the `default` slot.
+	 *
+	 * If both `text` and `default` slot are used, the `text` property takes precedence.
+	 * @public
+	 */
+	@slot({ type: Node, "default": true })
+	content!: Array<Node>;
 
 	/**
 	 * **Note:** While the slot allows option for setting custom avatar, to match the
@@ -151,20 +188,47 @@ class ListItemStandard extends ListItem implements IAccessibleListItem {
 	 *
 	 * **Note:** If bigger `ui5-avatar` needs to be used, then the size of the
 	 * `ui5-li` should be customized in order to fit.
-	 * @since 1.10.0
+	 * @since 2.0.0
 	 * @public
 	 */
 	@slot()
-	imageContent!: Array<HTMLElement>;
+	image!: Array<HTMLElement>;
 
 	onBeforeRendering() {
 		super.onBeforeRendering();
-		this.hasTitle = !!this.textContent;
-		this._hasImageContent = this.hasImageContent;
+		this.hasTitle = !!(this.text || this.textContent);
+		this._hasImage = this.hasImage;
+
+		// Only load ExpandableText if "Normal" wrapping is used
+		if (this.wrappingType === "Normal") {
+			// If feature is already loaded (preloaded by the user via importing ListItemStandardExpandableText.js), the template is already available
+			if (ListItemStandard.ExpandableTextTemplate) {
+				this.expandableTextTemplate = ListItemStandard.ExpandableTextTemplate;
+				// If feature is not preloaded, load the template dynamically
+			} else {
+				import("./features/ListItemStandardExpandableTextTemplate.js").then(module => {
+					this.expandableTextTemplate = module.default;
+				});
+			}
+		}
 	}
 
-	get displayImage(): boolean {
-		return !!this.image;
+	/**
+	 * Returns the content text, either from text property or from the default slot
+	 * @private
+	 */
+	get _textContent(): string {
+		return this.text || this.textContent || "";
+	}
+
+	/**
+	 * Determines the maximum characters to display based on the current media range.
+	 * - Size S: 100 characters
+	 * - Size M and larger: 300 characters
+	 * @private
+	 */
+	get _maxCharacters(): number {
+		return this.mediaRange === "S" ? MAX_CHARACTERS_SIZE_S : MAX_CHARACTERS_SIZE_M;
 	}
 
 	get displayIconBegin(): boolean {
@@ -175,9 +239,11 @@ class ListItemStandard extends ListItem implements IAccessibleListItem {
 		return !!(this.icon && this.iconEnd);
 	}
 
-	get hasImageContent(): boolean {
-		return !!this.imageContent.length;
+	get hasImage(): boolean {
+		return !!this.image.length;
 	}
+
+	static ExpandableTextTemplate?: ExpandableTextTemplate;
 }
 
 ListItemStandard.define();

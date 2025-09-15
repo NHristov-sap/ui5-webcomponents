@@ -3,7 +3,7 @@
 // eslint-disable-next-line
 import testAssetsCommon from "./bundle.common.bootstrap.js"; // code that needs to be executed before other modules
 
-import { registerIconLoader } from "@ui5/webcomponents-base/dist/asset-registries/Icons.js";
+import { registerIconLoader, registerIcon, unsafeRegisterIcon } from "@ui5/webcomponents-base/dist/asset-registries/Icons.js";
 
 // SAP Icons
 import accept, { getPathData } from "@ui5/webcomponents-icons/dist/accept.js";
@@ -17,6 +17,8 @@ import actorv3 from "@ui5/webcomponents-icons-tnt/dist/v3/actor.js";
 import icon3d from "@ui5/webcomponents-icons-business-suite/dist/3d.js";
 import icon3dv1 from "@ui5/webcomponents-icons-business-suite/dist/v1/3d.js";
 import icon3dv2 from "@ui5/webcomponents-icons-business-suite/dist/v2/3d.js";
+import generateHighlightedMarkup from "@ui5/webcomponents-base/dist/util/generateHighlightedMarkup.js";
+import { getAllRegisteredTags } from "@ui5/webcomponents-base/dist/CustomElementsRegistry.js";
 
 // The SAP Icons V4 icon collection is set by default in sap_fiori_3,
 // but it's configurable:
@@ -33,7 +35,9 @@ import Bar from "./Bar.js";
 import Breadcrumbs from "./Breadcrumbs.js";
 import BusyIndicator from "./BusyIndicator.js";
 import Button from "./Button.js";
+import ButtonBadge from "./ButtonBadge.js";
 import Card from "./Card.js";
+import CalendarLegend from "./CalendarLegend.js";
 import CardHeader from "./CardHeader.js";
 import Carousel from "./Carousel.js";
 import CheckBox from "./CheckBox.js";
@@ -46,24 +50,40 @@ import DatePicker from "./DatePicker.js";
 import DateRangePicker from "./DateRangePicker.js";
 import DateTimePicker from "./DateTimePicker.js";
 import Dialog from "./Dialog.js";
+import DynamicDateRange from "./DynamicDateRange.js";
+import Today from "./dynamic-date-range-options/Today.js";
+import Yesterday from "./dynamic-date-range-options/Yesterday.js";
+import Tomorrow from "./dynamic-date-range-options/Tomorrow.js";
+import SingleDate from "./dynamic-date-range-options/SingleDate.js";
+import DateRange from "./dynamic-date-range-options/DateRange.js";
+import ExpandableText from "./ExpandableText.js";
 import Form from "./Form.js";
 import FormItem from "./FormItem.js";
 import FormGroup from "./FormGroup.js";
 import FileUploader from "./FileUploader.js";
 import Table from "./Table.js";
 import TableHeaderCell from "./TableHeaderCell.js";
+import TableHeaderCellActionAI from "./TableHeaderCellActionAI.js";
 import TableHeaderRow from "./TableHeaderRow.js";
 import TableGrowing from "./TableGrowing.js";
+import TableSelection from "./TableSelection.js";
+import TableSelectionMulti from "./TableSelectionMulti.js";
+import TableSelectionSingle from "./TableSelectionSingle.js";
+import TableVirtualizer from "./TableVirtualizer.js";
+import TableRowAction from "./TableRowAction.js";
+import TableRowActionNavigation from "./TableRowActionNavigation.js";
 import Icon from "./Icon.js";
 import Input from "./Input.js";
+import SuggestionItemCustom from "./SuggestionItemCustom.js";
 import MultiInput from "./MultiInput.js";
 import Label from "./Label.js";
+import LastOptions from "./dynamic-date-range-options/LastOptions.js";
 import Link from "./Link.js";
 import Menu from "./Menu.js";
-import NavigationMenu from "./NavigationMenu.js";
-import NavigationMenuItem from "./NavigationMenuItem.js";
 import MenuItem from "./MenuItem.js";
 import MenuSeparator from "./MenuSeparator.js";
+import NextOptions from "./dynamic-date-range-options/NextOptions.js";
+import MenuItemGroup from "./MenuItemGroup.js";
 import Popover from "./Popover.js";
 import Panel from "./Panel.js";
 import RadioButton from "./RadioButton.js";
@@ -94,7 +114,6 @@ import TimeSelectionClocks from "./TimeSelectionClocks.js";
 import Title from "./Title.js";
 import Toast from "./Toast.js";
 import ToggleButton from "./ToggleButton.js";
-// console.log({ToggleButton})
 import Toolbar from "./Toolbar.js";
 import ToolbarButton from "./ToolbarButton.js";
 import ToolbarSeparator from "./ToolbarSeparator.js";
@@ -106,27 +125,27 @@ import TreeList from "./TreeList.js";
 import TreeItem from "./TreeItem.js";
 import TreeItemCustom from "./TreeItemCustom.js";
 import List from "./List.js";
-// console.log({List})
 import ListItemStandard from "./ListItemStandard.js";
 import ListItemCustom from "./ListItemCustom.js";
 import ListItemGroupHeader from "./ListItemGroupHeader.js";
 import ListItemGroup from "./ListItemGroup.js";
 
-// Features
-import "./features/ColorPaletteMoreColors.js";
-import "./features/InputSuggestions.js";
+// custom SVG template (Lit or JSX), registered as an icon
+import IconPensilJSXTemplate from "./bundle-assets/IconPensilJSXTemplate.js";
 
 const icons = [accept, acceptv4, acceptv5, actor, actorv2, actorv3, icon3d, icon3dv1, icon3dv2];
 
 const testAssets = {
 	...testAssetsCommon,
 	getAcceptIconPathData: getPathData,
+	generateHighlightedMarkup,
 	getExportedIconsValues: () => icons,
+	getAllRegisteredTags,
 };
 
-registerIconLoader("my-icons", () => {
+registerIconLoader("my-custom-icons", () => {
 	return Promise.resolve([{
-		"collection": "my-icons-v4",
+		"collection": "my-custom-icons-v4",
 		"packageName": "test",
 		"data": {
 			"mark": {
@@ -152,7 +171,7 @@ registerIconLoader("my-icons", () => {
 		},
 	},
 	{
-		"collection": "my-icons-v5",
+		"collection": "my-custom-icons-v5",
 		"packageName": "test",
 		"themeFamily": "sap_horizon",
 		"data": {
@@ -199,6 +218,26 @@ registerIconLoader("my-icons", () => {
 			},
 		},
 	}]);
+});
+
+registerIcon("pencil", {
+	collection: "my-custom-icons",
+	customTemplate: IconPensilJSXTemplate,
+});
+
+unsafeRegisterIcon("pencil2", {
+	collection: "my-custom-icons",
+	customTemplateAsString: `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+		<g clip-path="url(#clip0_2221_23716)"><path d="M11.3333 1.99998C11.503 1.79933 11.7131 1.63601 11.9499 1.52043C12.1868 1.40485 12.4453 1.33953 12.709 1.32865C12.9727 1.31777 13.2358 1.36156 13.4815 1.45723C13.7272 1.55291 13.9502 1.69836 14.1361 1.88432C14.3221 2.07029 14.467 2.29268 14.5616 2.53734C14.6562 2.78199 14.6985 3.04353 14.6857 3.3053C14.6728 3.56706 14.6052 3.8233 14.4872 4.05769C14.3691 4.29207 14.2032 4.49947 13.9999 4.66664L4.99992 13.6666L1.33325 14.6666L2.33325 11L11.3333 1.99998Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 3.33331L12.6667 5.99998" stroke-linecap="round" stroke-linejoin="round"/></g>
+		<defs>
+			<clipPath id="clip0_2221_23716"><rect width="16" height="16"/></clipPath>
+		</defs>
+	</svg>`,
+});
+
+registerIcon("myIcon", {
+	collection: "my-custom-icons",
+	pathData: "M16.5 76c0-41 32-75 72-75h335c40 0 72 34 72 75v329c0 41-32 75-72 75h-335c-40 0-72-34-72-75V76zm263 356h144c13 0 24-12 24-27V76c0-15-11-27-24-27h-144v383zM88.5 49c-13 0-24 12-24 27v329c0 15 11 27 24 27h143V49h-143z",
 });
 
 // @ts-ignore

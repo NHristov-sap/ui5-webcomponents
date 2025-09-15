@@ -11,10 +11,11 @@
 
 
 		<script src="%VITE_BUNDLE_PATH%" type="module"></script>
-
-
 	</head>
-	<body class="timepicker1auto">
+	<body class="timepicker1auto" lang="en">
+
+		<ui5-label for="tpLabel">Deadline</ui5-label>
+		<ui5-time-picker id="tpLabel"></ui5-time-picker>
 
 		<div class="samples">
 			<div class="sample-box-1">
@@ -58,10 +59,17 @@
 
 		<ui5-title>Test valueStateMessage slot</ui5-title>
 		<ui5-time-picker id="timepickerValueStateMessage" value-state="Negative">
-			<div slot="valueStateMessage" id="customValueStateMessage">Please provide valid value</div>
+			<div slot="valueStateMessage">Information message. This is a <a href="#">Link</a>. Extra long text used as an information message. Extra long text used as an information message - 2. Extra long text used as an information message - 3.</div>
 		</ui5-time-picker>
 		<ui5-button id="testBtn">btn for testing</ui5-button>
 
+		<ui5-title>Test accessible-name and accessible-name-ref</ui5-title>
+		<ui5-label id="label">Pick a time</ui5-label>
+		<ui5-time-picker id="timepickerAccessibleNameRef" accessible-name-ref="label"></ui5-time-picker>
+		<ui5-button id="testBtn">btn for testing</ui5-button>
+		<br />
+		<ui5-time-picker id="timepickerAccessibleName" accessible-name="Pick a time"></ui5-time-picker>
+		<ui5-button id="testBtn">btn for testing</ui5-button>
 
 		<section class="ui5-content-density-compact">
 			<h3>TimePicker in Compact</h3>
@@ -69,6 +77,24 @@
 				<ui5-time-picker></ui5-time-picker>
 			</div>
 		</section>
+
+		<ui5-title>Test valueStateMessage in header</ui5-title>
+		<ui5-time-picker id="timepickerValueStateMessage" value-state="Negative">
+			<div slot="valueStateMessage" id="customValueStateMessage">Please provide valid value</div>
+		</ui5-time-picker>
+
+		<ui5-time-picker></ui5-time-picker>
+
+		<ui5-time-picker id="timepickerValueStateMessageCritical" value-state="Critical">
+			<div slot="valueStateMessage" id="customValueStateMessageCritical">Please check this value</div>
+		</ui5-time-picker>
+
+		<ui5-time-picker id="timepickerValueStateMessageInformation" value-state="Information">
+			<div slot="valueStateMessage" id="customValueStateMessageInformation">Additional information</div>
+		</ui5-time-picker>
+
+		<ui5-time-picker readonly></ui5-time-picker>
+		<ui5-time-picker disabled></ui5-time-picker>
 
 		<script>
 				var counter = 0;

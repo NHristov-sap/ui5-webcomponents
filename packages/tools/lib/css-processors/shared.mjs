@@ -24,16 +24,6 @@ const writeFileIfChanged = async (fileName, content) => {
     }
 }
 
-// strips the unnecessary theming data coming from @sap-theming/theming-base-content and leaves only the css parameters
-const stripThemingBaseContent = css => {
-	css = css.replace(/\.sapThemeMeta[\s\S]*?:root/, ":root");
-	css = css.replace(/\.background-image.*{.*}/, "");
-	css = css.replace(/\.sapContrast[ ]*:root[\s\S]*?}/, "");
-	css = css.replace(/--sapFontUrl.*\);?/, "");
-	return css;
-}
-
-
 const DEFAULT_THEME = assets.themes.default;
 
 const getDefaultThemeCode = packageName => {
@@ -42,35 +32,15 @@ const getDefaultThemeCode = packageName => {
 import defaultThemeBase from "@ui5/webcomponents-theming/dist/generated/themes/${DEFAULT_THEME}/parameters-bundle.css.js";
 import defaultTheme from "./${DEFAULT_THEME}/parameters-bundle.css.js";
 
-registerThemePropertiesLoader("@ui5/webcomponents-theming", "${DEFAULT_THEME}", async () => defaultThemeBase);
-registerThemePropertiesLoader("${packageName}", "${DEFAULT_THEME}", async () => defaultTheme);
+registerThemePropertiesLoader("@" + "ui5" + "/" + "webcomponents-theming", "${DEFAULT_THEME}", async () => defaultThemeBase);
+registerThemePropertiesLoader(${ packageName.split("").map(c => `"${c}"`).join (" + ") }, "${DEFAULT_THEME}", async () => defaultTheme);
 `;
 };
 
-const getFileContent = (tsMode, targetFile, packageName, css, includeDefaultTheme) => {
-	if (tsMode) {
-		return getTSContent(targetFile, packageName, css, includeDefaultTheme);
-	}
-
-	return getJSContent(targetFile, packageName, css, includeDefaultTheme);
-}
-
-const getTSContent = (targetFile, packageName, css, includeDefaultTheme) => {
-	const typeImport = "import type { StyleData } from \"@ui5/webcomponents-base/dist/types.js\";"
+const getFileContent = (packageName, css, includeDefaultTheme) => {
 	const defaultTheme = includeDefaultTheme ? getDefaultThemeCode(packageName) : "";
-
-	// tabs are intentionally mixed to have proper identation in the produced file
-	return `${typeImport}
-${defaultTheme}
-const styleData: StyleData = {packageName:"${packageName}",fileName:"${targetFile.substr(targetFile.lastIndexOf("themes"))}",content:${css}};
-export default styleData;
-	`;
+	return `${defaultTheme}export default ${css.trim()}`
 }
 
-const getJSContent = (targetFile, packageName, css, includeDefaultTheme) => {
-	const defaultTheme = includeDefaultTheme ? getDefaultThemeCode(packageName) : "";
 
-	return `${defaultTheme}export default {packageName:"${packageName}",fileName:"${targetFile.substr(targetFile.lastIndexOf("themes"))}",content:${css}}`
-}
-
-export { writeFileIfChanged, stripThemingBaseContent, getFileContent}
+export { writeFileIfChanged, getFileContent}
